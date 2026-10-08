@@ -9,11 +9,11 @@ ASP.NET Core **Razor Pages** web app on **.NET 10**, scaffolded from the default
 usings are enabled. Root namespace is `my_project` (the csproj name `my-project`
 is not a valid C# identifier, hence the underscore).
 
-There is no solution file and no README. Two projects: the web app
-(`my-project.csproj` at the root) and `tests/my-project.Tests`. The test project lives
-*inside* the web project's folder, so the web csproj removes `tests/**` from its globs;
-there is deliberately no `.sln`, so `dotnet build`/`dotnet run` at the root stay
-unambiguous.
+There is no solution file and no README. Two .NET projects: the web app
+(`my-project.csproj` at the root) and `tests/my-project.Tests`, plus an npm-based
+end-to-end suite at `tests/e2e`. The test projects live *inside* the web project's folder,
+so the web csproj removes `tests/**` from its globs; there is deliberately no `.sln`, so
+`dotnet build`/`dotnet run` at the root stay unambiguous.
 
 Persistence is EF Core + SQLite, schema created at startup with `EnsureCreated()` — no
 migrations yet. See [ADR 001](docs/architecture/adr/001-persistence-with-ef-core-and-sqlite.md).
@@ -33,9 +33,31 @@ dotnet test tests/my-project.Tests
 dotnet test tests/my-project.Tests --filter "FullyQualifiedName~<TestName>"
 ```
 
-Unit tests cover the domain (`tests/.../Domain`, `Services`); integration tests drive the
-real app over HTTP with `WebApplicationFactory` against in-memory SQLite
-(`tests/.../Integration`). No other test kinds — no UI or end-to-end browser tests.
+```bash
+cd tests/e2e && npm ci && npx playwright install chromium   # first time only
+cd tests/e2e && npm test                 # headless
+cd tests/e2e && npm run test:ui          # pick and watch tests interactively
+cd tests/e2e && npm run report           # open the last HTML report
+```
+
+Three layers, and nothing else:
+
+- **Unit** — the domain and services (`tests/.../Domain`, `tests/.../Services`).
+- **Integration** — the real app over HTTP via `WebApplicationFactory` against in-memory
+  SQLite (`tests/.../Integration`).
+- **End-to-end** — [tests/e2e/](tests/e2e/): Playwright driving a real Chromium against a
+  real `dotnet run`. Reserved for whole journeys across more than one browser; anything
+  provable at a lower layer belongs there instead.
+
+Playwright starts the app itself on **port 5203** with a throwaway SQLite file in the temp
+directory, so the suite never touches a `dotnet run` already on 5202. It builds into
+`tests/e2e/.playwright/artifacts` for the same reason — a running dev server holds a lock
+on the project's own `bin/`.
+
+Because identity is an HttpOnly cookie, "another person" means another BrowserContext: the
+`device()` fixture in [tests/e2e/support/app.js](tests/e2e/support/app.js) hands out fresh
+browsers, and the built-in `page` plays the first person (only it records traces and
+failure screenshots).
 
 ## Structure
 

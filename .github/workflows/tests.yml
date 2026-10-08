@@ -8,7 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Domain, service and WebApplicationFactory integration tests.
   test:
+    name: Unit and integration
     runs-on: ubuntu-latest
 
     steps:
@@ -42,3 +44,57 @@ jobs:
         with:
           name: test-results
           path: TestResults/*.trx
+
+  # The same app, driven through a real browser. Playwright starts it itself (see
+  # tests/e2e/playwright.config.js), on its own port and its own throwaway SQLite file.
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/e2e
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Browsers are a few hundred MB; keyed on the lockfile, so the cache turns over
+      # exactly when the pinned Playwright version does.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tests/e2e/package-lock.json') }}
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # Prebuilt so the webServer's own `dotnet run` starts inside Playwright's timeout
+      # rather than spending it compiling.
+      - name: Build the web app
+        run: dotnet build ../.. --artifacts-path .playwright/artifacts
+
+      - name: Run end-to-end tests
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
+          retention-days: 7

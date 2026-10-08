@@ -20,12 +20,16 @@ builder.Services.AddScoped<TripService>();
 
 // NFR-004: invite-link lookups are rate-limited per client so the token space cannot be
 // probed in bulk. Applied to the join page via [EnableRateLimiting("invite")].
+// The limit is configurable only so the end-to-end suite can drive the join page harder
+// than any real client would; the default is the value the deployed app runs on.
+var invitePermitLimit = builder.Configuration.GetValue("RateLimiting:InvitePermitLimit", 20);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy("invite", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = invitePermitLimit, Window = TimeSpan.FromMinutes(1) }));
 });
 
 var app = builder.Build();
