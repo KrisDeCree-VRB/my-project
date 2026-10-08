@@ -72,7 +72,7 @@ public class Trip
     /// </summary>
     public TripPhase PhaseOn(DateOnly today) =>
         today < StartDate ? TripPhase.Upcoming
-        : today <= EndDate ? TripPhase.UnderWay
+        : today <= EndDate ? TripPhase.Current
         : TripPhase.Past;
 
     /// <summary>Whole days until the start; 0 on the start date itself, negative after (FR-012, EC-10).</summary>

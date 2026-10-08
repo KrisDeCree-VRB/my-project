@@ -13,8 +13,8 @@
     // FR-012, EC-10: a countdown before the start, "today" on the day, "under way" after.
     var when = Model.Phase switch
     {
-        TripPhase.UnderWay when Model.DaysUntilStart == 0 => "Starts today",
-        TripPhase.UnderWay => "Under way",
+        TripPhase.Current when Model.DaysUntilStart == 0 => "Starts today",
+        TripPhase.Current => "Under way",
         TripPhase.Upcoming when Model.DaysUntilStart == 1 => "In 1 day",
         TripPhase.Upcoming => $"In {Model.DaysUntilStart} days",
         _ => "Finished",
