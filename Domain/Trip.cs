@@ -62,6 +62,22 @@ public class Trip
         return trip;
     }
 
+    /// <summary>How many are in, out and unsure right now — derived, never stored (FR-007, INV-13).</summary>
+    public Headcount Headcount => Headcount.Of(Participants);
+
+    /// <summary>
+    /// Where this trip sits relative to <paramref name="today"/> (FR-016). The caller
+    /// passes one <c>today</c> for the whole page so a trip cannot flicker between
+    /// current and past within a single render (EC-13).
+    /// </summary>
+    public TripPhase PhaseOn(DateOnly today) =>
+        today < StartDate ? TripPhase.Upcoming
+        : today <= EndDate ? TripPhase.Current
+        : TripPhase.Past;
+
+    /// <summary>Whole days until the start; 0 on the start date itself, negative after (FR-012, EC-10).</summary>
+    public int DaysUntilStart(DateOnly today) => StartDate.DayNumber - today.DayNumber;
+
     /// <summary>The one invite link that currently admits new participants, if any (INV-6).</summary>
     public InviteLink? ActiveInviteLink => InviteLinks.SingleOrDefault(l => l.IsActive);
 

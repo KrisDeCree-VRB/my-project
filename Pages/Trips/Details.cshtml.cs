@@ -25,6 +25,27 @@ public class DetailsModel(TripService trips) : PageModel
     public async Task<IActionResult> OnGetAsync(Guid tripId) =>
         await LoadAsync(tripId) ?? Page();
 
+    /// <summary>How many are in, out and unsure (FR-007).</summary>
+    public Headcount Headcount => Trip.Headcount;
+
+    /// <summary>
+    /// Records my own answer (FR-003). The posted value says what, never who: who comes
+    /// from the binding inside the service (INV-11, NFR-003).
+    /// </summary>
+    public async Task<IActionResult> OnPostAttendanceAsync(Guid tripId, string? status)
+    {
+        // Parsed here rather than model-bound: a bad value must be rejected outright, not
+        // quietly bound to the enum's default (EC-3). TryParse also accepts raw numbers,
+        // hence IsDefined.
+        if (!Enum.TryParse<AttendanceStatus>(status, ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed))
+            return BadRequest();
+
+        if (!await trips.SetAttendanceAsync(tripId, parsed))
+            return NotFound(); // Not a participant, or an unknown trip — the same answer either way (EC-4).
+
+        return RedirectToPage(new { tripId });
+    }
+
     public async Task<IActionResult> OnPostRevokeAsync(Guid tripId)
     {
         if (await LoadAsync(tripId) is { } failure) return failure;

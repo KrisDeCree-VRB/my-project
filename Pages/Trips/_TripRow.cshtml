@@ -1,0 +1,42 @@
+@using my_project.Domain
+@using my_project.Services
+@model TripSummary
+@{
+    // NFR-007: each state is named as well as coloured.
+    var status = Model.Me.AttendanceStatus switch
+    {
+        AttendanceStatus.In => (Label: "✓ You're in", Css: "text-bg-success"),
+        AttendanceStatus.Out => (Label: "✗ You're out", Css: "text-bg-danger"),
+        _ => (Label: "? You haven't answered", Css: "text-bg-warning"),
+    };
+
+    // FR-012, EC-10: a countdown before the start, "today" on the day, "under way" after.
+    var when = Model.Phase switch
+    {
+        TripPhase.Current when Model.DaysUntilStart == 0 => "Starts today",
+        TripPhase.Current => "Under way",
+        TripPhase.Upcoming when Model.DaysUntilStart == 1 => "In 1 day",
+        TripPhase.Upcoming => $"In {Model.DaysUntilStart} days",
+        _ => "Finished",
+    };
+}
+
+@* FR-013: the whole row opens the trip directly — no invite link involved. *@
+<li class="list-group-item">
+    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+        <div>
+            <a asp-page="/Trips/Details" asp-route-tripId="@Model.Trip.Id" class="h6 d-block mb-1">@Model.Trip.Name</a>
+            @* EC-11: two trips may share a name; location and dates tell them apart. *@
+            <span class="text-muted small">
+                @Model.Trip.Location &middot;
+                @Model.Trip.StartDate.ToString("d MMM yyyy") – @Model.Trip.EndDate.ToString("d MMM yyyy")
+            </span>
+        </div>
+        <div class="text-end">
+            <span class="badge @status.Css">@status.Label</span>
+            <div class="small text-muted mt-1">
+                @when &middot; @Model.Headcount.In in
+            </div>
+        </div>
+    </div>
+</li>

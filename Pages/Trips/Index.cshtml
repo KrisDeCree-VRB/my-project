@@ -1,0 +1,41 @@
+@page "/trips"
+@model my_project.Pages.Trips.IndexModel
+@{
+    ViewData["Title"] = "My trips";
+    ViewData["NoIndex"] = true;
+}
+
+<h1 class="h3">My trips</h1>
+
+@if (Model.Trips.IsEmpty)
+{
+    @* SC-009: nothing of anyone else's is revealed here — only an invitation to start. *@
+    <p class="text-muted">You're not part of any trip yet.</p>
+    <a asp-page="/Trips/Create" class="btn btn-primary">Start a trip</a>
+}
+else
+{
+    @* FR-013: every row opens its trip directly, no invite link needed. *@
+    @if (Model.Trips.CurrentAndUpcoming.Count > 0)
+    {
+        <ul class="list-group mb-4">
+            @foreach (var trip in Model.Trips.CurrentAndUpcoming)
+            {
+                @await Html.PartialAsync("_TripRow", trip)
+            }
+        </ul>
+    }
+
+    @if (Model.Trips.Past.Count > 0)
+    {
+        <h2 class="h5 text-muted">Past trips</h2>
+        <ul class="list-group opacity-75">
+            @foreach (var trip in Model.Trips.Past)
+            {
+                @await Html.PartialAsync("_TripRow", trip)
+            }
+        </ul>
+    }
+
+    <a asp-page="/Trips/Create" class="btn btn-outline-primary mt-4">Start another trip</a>
+}
