@@ -25,11 +25,14 @@ jobs:
       - name: Build
         run: dotnet build tests/my-project.Tests --configuration Release --no-restore
 
+      # The GitHubActions logger writes a pass/fail table to the run summary and
+      # annotates failing tests inline; the trx is kept as a downloadable record.
       - name: Test
         run: >
           dotnet test tests/my-project.Tests
           --configuration Release
           --no-build
+          --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true"
           --logger "trx;LogFileName=test-results.trx"
           --results-directory TestResults
 
