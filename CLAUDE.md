@@ -9,8 +9,14 @@ ASP.NET Core **Razor Pages** web app on **.NET 10**, scaffolded from the default
 usings are enabled. Root namespace is `my_project` (the csproj name `my-project`
 is not a valid C# identifier, hence the underscore).
 
-There is no solution file, no test project, and no README — the single
-`my-project.csproj` is the whole build.
+There is no solution file and no README. Two projects: the web app
+(`my-project.csproj` at the root) and `tests/my-project.Tests`. The test project lives
+*inside* the web project's folder, so the web csproj removes `tests/**` from its globs;
+there is deliberately no `.sln`, so `dotnet build`/`dotnet run` at the root stay
+unambiguous.
+
+Persistence is EF Core + SQLite, schema created at startup with `EnsureCreated()` — no
+migrations yet. See [ADR 001](docs/architecture/adr/001-persistence-with-ef-core-and-sqlite.md).
 
 ## Commands
 
@@ -22,8 +28,14 @@ dotnet watch                    # hot reload during development
 dotnet format                   # formatting / style fixes
 ```
 
-No test project exists yet. If one is added, use `dotnet test` and
-`dotnet test --filter "FullyQualifiedName~<TestName>"` for a single test.
+```bash
+dotnet test tests/my-project.Tests
+dotnet test tests/my-project.Tests --filter "FullyQualifiedName~<TestName>"
+```
+
+Unit tests cover the domain (`tests/.../Domain`, `Services`); integration tests drive the
+real app over HTTP with `WebApplicationFactory` against in-memory SQLite
+(`tests/.../Integration`). No other test kinds — no UI or end-to-end browser tests.
 
 ## Structure
 

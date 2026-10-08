@@ -460,7 +460,7 @@ it reads from them.
 
 | #   | Question                                                                                     | Owner | Status | Resolution                                               |
 | --- | ---------------------------------------------------------------------------------------------- | ----- | ------ | -------------------------------------------------------- |
-| 1   | Which persistence mechanism backs the domain model?                                          | Kris  | Open   | Architecture decision; record as an ADR in arc42 §9.      |
+| 1   | Which persistence mechanism backs the domain model?                                          | Kris  | Resolved | EF Core + SQLite — [ADR 001](../architecture/adr/001-persistence-with-ef-core-and-sqlite.md). |
 | 2   | Can a trip's name, location or dates be edited after creation, and by whom?                  | Kris  | Open   | Out of scope here (§1.3); needs its own story.            |
 | 3   | Can a participant leave a trip, or be removed by the starter?                                | Kris  | Open   | Not covered by stories 001–003; also open in spec 004-005 §10 #1. |
 

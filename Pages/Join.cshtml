@@ -1,0 +1,42 @@
+@page "/join/{token}"
+@model my_project.Pages.JoinModel
+@{
+    ViewData["Title"] = "You're invited";
+    ViewData["NoIndex"] = true;
+    var trip = Model.Trip!;
+}
+
+<h1 class="h3">@trip.Name</h1>
+<p class="text-muted">
+    @trip.Location &middot;
+    @trip.StartDate.ToString("d MMM yyyy") – @trip.EndDate.ToString("d MMM yyyy")
+</p>
+
+<p>Already coming: @string.Join(", ", trip.Participants.Select(p => p.DisplayName))</p>
+
+<section class="mb-4 col-12 col-md-6">
+    <h2 class="h5">Join as someone new</h2>
+    <form method="post" asp-page-handler="Join" class="d-flex gap-2">
+        <input name="DisplayName" class="form-control" placeholder="Your name" aria-label="Your name" autofocus />
+        <button type="submit" class="btn btn-primary">Join</button>
+    </form>
+    <span asp-validation-for="DisplayName" class="text-danger"></span>
+</section>
+
+<section class="col-12 col-md-6">
+    @* FR-017: someone who already joined on another device resumes instead of
+       creating a second participant. *@
+    <h2 class="h5">Already joined on another device?</h2>
+    <form method="post" asp-page-handler="Resume">
+        <ul class="list-group">
+            @foreach (var participant in trip.Participants.OrderBy(p => p.DisplayName))
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @participant.DisplayName
+                    <button type="submit" name="participantId" value="@participant.Id"
+                            class="btn btn-outline-secondary btn-sm">That's me</button>
+                </li>
+            }
+        </ul>
+    </form>
+</section>

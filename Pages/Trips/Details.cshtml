@@ -1,0 +1,90 @@
+@page "/trips/{tripId:guid}"
+@model my_project.Pages.Trips.DetailsModel
+@{
+    ViewData["Title"] = Model.Trip.Name;
+    ViewData["NoIndex"] = true;
+}
+
+<h1 class="h3">@Model.Trip.Name</h1>
+<p class="text-muted">
+    @Model.Trip.Location &middot;
+    @Model.Trip.StartDate.ToString("d MMM yyyy") – @Model.Trip.EndDate.ToString("d MMM yyyy")
+</p>
+
+@if (Model.Created)
+{
+    <div class="alert alert-success">Your trip is ready. Share the link below with the group.</div>
+}
+
+<section class="mb-4">
+    <h2 class="h5">Who's coming (@Model.Trip.Participants.Count)</h2>
+    <ul class="list-group">
+        @foreach (var participant in Model.Trip.Participants.OrderBy(p => p.JoinedAt))
+        {
+            <li class="list-group-item">
+                @participant.DisplayName
+                @if (Model.Trip.IsStarter(participant.Id))
+                {
+                    <span class="badge text-bg-secondary">started the trip</span>
+                }
+                @if (participant.Id == Model.Me.Id)
+                {
+                    <span class="badge text-bg-light">you</span>
+                }
+            </li>
+        }
+    </ul>
+</section>
+
+<section class="mb-4">
+    <h2 class="h5">Invite link</h2>
+    @if (Model.InviteUrl is not null)
+    {
+        <div class="input-group">
+            <input type="text" class="form-control" id="inviteUrl" value="@Model.InviteUrl" readonly />
+            <button class="btn btn-outline-secondary" type="button" id="copyInvite">Copy</button>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">There is no active invite link. Nobody new can join.</p>
+    }
+
+    @if (Model.IsStarter)
+    {
+        <form method="post" class="mt-2 d-flex gap-2">
+            @if (Model.InviteUrl is not null)
+            {
+                <button type="submit" asp-page-handler="Revoke" class="btn btn-outline-danger btn-sm">Revoke link</button>
+            }
+            <button type="submit" asp-page-handler="Regenerate" class="btn btn-outline-primary btn-sm">
+                @(Model.InviteUrl is null ? "Create a new link" : "Replace link")
+            </button>
+        </form>
+    }
+</section>
+
+<section>
+    <h2 class="h5">Your name</h2>
+    <form method="post" asp-page-handler="Rename" class="d-flex gap-2 col-12 col-md-6">
+        <input name="NewDisplayName" class="form-control" value="@Model.Me.DisplayName" aria-label="Your display name" />
+        <button type="submit" class="btn btn-outline-secondary">Save</button>
+    </form>
+    <span asp-validation-for="NewDisplayName" class="text-danger"></span>
+</section>
+
+@section Scripts {
+    <script>
+        // SC-004: copy the invite link in a single action.
+        document.getElementById('copyInvite')?.addEventListener('click', async (e) => {
+            const field = document.getElementById('inviteUrl');
+            try {
+                await navigator.clipboard.writeText(field.value);
+            } catch {
+                field.select(); // Clipboard API needs a secure context; fall back to selecting.
+                document.execCommand('copy');
+            }
+            e.target.textContent = 'Copied';
+        });
+    </script>
+}

@@ -55,3 +55,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 .claude/settings.local.json
+
+## Local database
+*.db
+*.db-shm
+*.db-wal

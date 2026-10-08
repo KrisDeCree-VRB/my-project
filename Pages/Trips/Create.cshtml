@@ -1,0 +1,44 @@
+@page "/trips/create"
+@model my_project.Pages.Trips.CreateModel
+@{
+    ViewData["Title"] = "Start a trip";
+    ViewData["NoIndex"] = true;
+}
+
+<h1 class="h3 mb-3">Start a trip</h1>
+
+<form method="post" class="col-12 col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Name" class="form-label"></label>
+        <input asp-for="Input.Name" class="form-control" autofocus />
+        <span asp-validation-for="Input.Name" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Location" class="form-label"></label>
+        <input asp-for="Input.Location" class="form-control" />
+        <span asp-validation-for="Input.Location" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.StartDate" class="form-label"></label>
+        <input asp-for="Input.StartDate" type="date" class="form-control" />
+        <span asp-validation-for="Input.StartDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.EndDate" class="form-label"></label>
+        <input asp-for="Input.EndDate" type="date" class="form-control" />
+        <span asp-validation-for="Input.EndDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.DisplayName" class="form-label"></label>
+        <input asp-for="Input.DisplayName" class="form-control" />
+        <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Create trip</button>
+</form>
