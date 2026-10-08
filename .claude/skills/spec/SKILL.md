@@ -4,8 +4,9 @@ description: >
   Interactive feature specification writer. Guides you through problem analysis,
   user stories, functional requirements, acceptance scenarios (Given/When/Then),
   domain modeling, and non-functional requirements. Produces a complete spec
-  following the project's feature-spec-template.md. Invoke with a feature name
-  or short description.
+  following the project's feature-spec-template.md, and keeps the global domain
+  model at docs/domainmodel.md up to date. Invoke with a feature name or short
+  description.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(ls *), Bash(cat *), Bash(mkdir *)
 ---
@@ -35,9 +36,14 @@ story number from the user story map in `docs/product/story-map.md`.
 2. Read the user story map at `docs/product/story-map.md` to understand the
    project context, user activities, and the story being specified. Use the
    story number from the map as the spec file number prefix.
-3. Check `docs/specs/` for existing specs to understand the domain vocabulary
+3. **Read the global domain model at `docs/domainmodel.md`.** This is the
+   authoritative, cross-feature view of the domain — entities, relationships,
+   invariants, and a Mermaid class diagram. Everything you propose in Phase 4
+   must be consistent with it, or must be an explicit, discussed change to it.
+   If the file does not exist yet, note that you will create it in Phase 7.
+4. Check `docs/specs/` for existing specs to understand the domain vocabulary
    already established.
-4. If the project has arc42 documentation (typically in `docs/arc42/` or `docs/architecture/`),
+5. If the project has arc42 documentation (typically in `docs/arc42/` or `docs/architecture/`),
    scan it to understand the system context, building blocks, and crosscutting
    concepts. Reference these throughout the spec.
 
@@ -98,6 +104,13 @@ Show each scenario to the user. They may refine wording, add scenarios, or merge
 
 **Goal:** Define the data objects, relationships, and business rules.
 
+Start from the global domain model in `docs/domainmodel.md` (read in "Before You
+Start"). Reuse entities, attributes, and relationships that already exist there
+instead of inventing parallel concepts. Tell the user explicitly which parts of
+this feature's model are **existing**, which are **new**, and which **change**
+an existing entity or invariant — changes to shared concepts need the user's
+agreement, since they affect features already specified.
+
 Based on the nouns and concepts from the user stories and scenarios, propose:
 
 - **Entities** with their attributes, types, and constraints
@@ -154,7 +167,71 @@ Before writing the file:
 2. Show the user a summary of any gaps.
 3. Ask if they want to resolve the gaps now or mark them as open questions.
 
-After writing the file, confirm the path.
+After writing the file, confirm the path, then continue to Phase 7.
+
+### Phase 7 — Update the Global Domain Model
+
+**Goal:** Keep `docs/domainmodel.md` in sync. This phase is **not optional** —
+every spec run ends here, even when the feature adds nothing new (in that case
+say so and leave the file unchanged).
+
+Merge this feature's Phase 4 model into `docs/domainmodel.md`:
+
+- Add new entities, value objects, relationships, and invariants.
+- Update existing ones where this spec changed them, and keep the old wording
+  only if it still holds for the other specs that rely on it.
+- Never duplicate an existing concept under a new name — reconcile the naming
+  with the user first.
+- Record which spec(s) each entity comes from, so the model stays traceable.
+- Regenerate the **Mermaid class diagram** so it matches the entity list and
+  relationships below it. The diagram is the whole domain, not just this feature.
+
+If the file does not exist, create it with this structure:
+
+````markdown
+# Domain Model
+
+<!-- Global, cross-feature domain model. Updated by the /spec skill after every spec. -->
+
+## Overview
+
+```mermaid
+classDiagram
+    class Order {
+        +UUID id
+        +Money total
+        +OrderStatus status
+    }
+    class Customer {
+        +UUID id
+        +string email
+    }
+    Customer "1" --> "0..*" Order : places
+```
+
+## Entities
+
+### Order
+| Attribute | Type | Constraints |
+| --- | --- | --- |
+| id | UUID | required, unique |
+| total | Money | >= 0 |
+
+Source specs: 001-place-order
+
+## Value Objects
+
+## Relationships
+
+## Domain Rules and Invariants
+
+| ID | Rule | Source specs |
+| --- | --- | --- |
+| INV-1 | An order total must never be negative. | 001-place-order |
+````
+
+Show the user a diff-style summary of what you are adding or changing before
+writing, then write the file and confirm the path.
 
 ## Output Conventions
 
@@ -166,6 +243,10 @@ After writing the file, confirm the path.
 - Use the exact section numbering and headings from the template.
 - Keep the HTML comment blocks (instructions, checklist) in the output — they're
   useful for future reviewers.
+- `docs/domainmodel.md` is the single global domain model — one file, never one
+  per feature. It is read before Phase 4 and rewritten in Phase 7 of every run,
+  and its Mermaid diagram must always match the entities and relationships
+  documented beneath it.
 
 ## Tone
 

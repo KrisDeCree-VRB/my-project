@@ -52,6 +52,9 @@ part of the development loop:
   `/spec` skill ([.claude/skills/spec/SKILL.md](.claude/skills/spec/SKILL.md)); `NNN`
   must match the story number from the story map. Template:
   [.claude/skills/spec/spec-template.md](.claude/skills/spec/spec-template.md).
+- `docs/domainmodel.md` — global, cross-feature domain model with a Mermaid class
+  diagram. The `/spec` skill reads it before modelling a feature and updates it
+  after every spec, so it stays the single source of ubiquitous language.
 
 The intended order is: story map → spec → implementation. When implementing a
 feature, read its spec and the referenced arc42 sections first, and reuse the
