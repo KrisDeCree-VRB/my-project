@@ -57,6 +57,15 @@ The intended order is: story map → spec → implementation. When implementing 
 feature, read its spec and the referenced arc42 sections first, and reuse the
 domain vocabulary established there.
 
+## GitHub issues
+
+Whenever the user mentions issues (creating, reading, listing, commenting,
+closing), use the **GitHub MCP server** (`mcp__github__*` tools) — not `gh` or
+the web UI. Always target this repository's remote:
+
+- owner: `KrisDeCree-VRB`
+- repo: `my-project`
+
 ## Conventions
 
 - Build artifacts (`bin/`, `obj/`) and local tooling dirs are ignored via
