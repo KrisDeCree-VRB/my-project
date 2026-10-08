@@ -8,6 +8,6 @@ namespace my_project.Domain;
 public enum TripPhase
 {
     Upcoming,
-    UnderWay,
+    Current,
     Past,
 }
