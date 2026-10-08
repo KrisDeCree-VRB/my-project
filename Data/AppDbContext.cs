@@ -25,6 +25,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             p.Property(x => x.DisplayName).HasMaxLength(DisplayNameRules.MaxLength * 4).IsRequired();
             p.Property(x => x.ComparisonKey).HasMaxLength(DisplayNameRules.MaxLength * 4).IsRequired();
+            // Stored as text so the column reads as "In"/"Out"/"Unsure", not an opaque int.
+            p.Property(x => x.AttendanceStatus).HasConversion<string>().HasMaxLength(16).IsRequired();
             // INV-3 enforced at the store, so two simultaneous joins cannot both win (EC-1).
             p.HasIndex(x => new { x.TripId, x.ComparisonKey }).IsUnique();
         });

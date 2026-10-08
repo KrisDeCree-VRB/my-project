@@ -138,6 +138,67 @@ public class TripService(AppDbContext db, VisitorIdentity visitorIdentity, TimeP
         return await SaveJoinAsync(trip, participant);
     }
 
+    /// <summary>
+    /// Records this browser's own answer for a trip (FR-003). Authorisation is the
+    /// binding and nothing else: no participant id is accepted from the request, so
+    /// there is no way to answer for someone else and no way to probe whether another
+    /// participant exists (INV-11, NFR-003, EC-4). Returns false when this browser is
+    /// not a participant of the trip.
+    /// </summary>
+    public async Task<bool> SetAttendanceAsync(Guid tripId, AttendanceStatus status)
+    {
+        if (!Enum.IsDefined(status)) return false; // EC-3.
+
+        var me = await GetBoundParticipantAsync(tripId);
+        if (me is null) return false;
+
+        // Last write wins: each request reads, sets and saves its own value (NFR-005).
+        me.SetAttendance(status, timeProvider.GetUtcNow().UtcDateTime);
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>
+    /// Every trip this browser is bound to, ordered with the next weekend away first
+    /// and finished trips kept separate (FR-010, FR-011, FR-015, FR-016).
+    /// </summary>
+    public async Task<MyTrips> GetMyTripsAsync()
+    {
+        var visitor = await visitorIdentity.GetCurrentAsync();
+        if (visitor is null) return MyTrips.Empty;
+
+        // A binding whose participant has vanished is ignored rather than rendered as a
+        // broken row (EC-12).
+        var myParticipantIds = visitor.Bindings
+            .Where(b => b.Participant is not null)
+            .Select(b => b.ParticipantId)
+            .ToList();
+
+        if (myParticipantIds.Count == 0) return MyTrips.Empty;
+
+        var trips = await db.Trips
+            .Include(t => t.Participants)
+            .Where(t => t.Participants.Any(p => myParticipantIds.Contains(p.Id)))
+            .ToListAsync();
+
+        // One reading of "today" for the whole list, so no trip can be classified
+        // against a different day than its neighbours (EC-13).
+        var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
+
+        var summaries = trips
+            .Select(t => new TripSummary(
+                t,
+                t.Participants.First(p => myParticipantIds.Contains(p.Id)),
+                t.Headcount,
+                t.PhaseOn(today),
+                t.DaysUntilStart(today)))
+            .ToList();
+
+        return new MyTrips(
+            summaries.Where(s => s.Phase != TripPhase.Past).OrderBy(s => s.Trip.StartDate).ToList(),
+            summaries.Where(s => s.Phase == TripPhase.Past).OrderByDescending(s => s.Trip.EndDate).ToList());
+    }
+
     public async Task RevokeInviteLinkAsync(Trip trip)
     {
         trip.RevokeInviteLink();

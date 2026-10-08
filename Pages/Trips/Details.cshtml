@@ -1,8 +1,18 @@
 @page "/trips/{tripId:guid}"
+@using my_project.Domain
 @model my_project.Pages.Trips.DetailsModel
 @{
     ViewData["Title"] = Model.Trip.Name;
     ViewData["NoIndex"] = true;
+
+    // NFR-007: every state carries a word and a symbol, so none of them is told apart by
+    // colour alone — "unsure" above all (FR-008).
+    (string Label, string Symbol, string Css) Badge(AttendanceStatus status) => status switch
+    {
+        AttendanceStatus.In => ("In", "✓", "text-bg-success"),
+        AttendanceStatus.Out => ("Out", "✗", "text-bg-danger"),
+        _ => ("Hasn't answered", "?", "text-bg-warning"),
+    };
 }
 
 <h1 class="h3">@Model.Trip.Name</h1>
@@ -17,20 +27,55 @@
 }
 
 <section class="mb-4">
+    <h2 class="h5">Are you coming?</h2>
+    @* SC-002, NFR-006: one click states the answer — no second page, no confirmation. *@
+    <form method="post" asp-page-handler="Attendance" class="d-flex gap-2 flex-wrap" role="group" aria-label="Your attendance">
+        @foreach (var option in new[] { AttendanceStatus.In, AttendanceStatus.Unsure, AttendanceStatus.Out })
+        {
+            var isCurrent = Model.Me.AttendanceStatus == option;
+            var text = option switch
+            {
+                AttendanceStatus.In => "I'm in",
+                AttendanceStatus.Out => "I'm out",
+                _ => "Not sure yet",
+            };
+            <button type="submit" name="status" value="@option"
+                    class="btn @(isCurrent ? "btn-primary" : "btn-outline-primary")"
+                    aria-pressed="@(isCurrent ? "true" : "false")">
+                @text @(isCurrent ? "(your answer)" : "")
+            </button>
+        }
+    </form>
+</section>
+
+<section class="mb-4">
     <h2 class="h5">Who's coming (@Model.Trip.Participants.Count)</h2>
+
+    @* FR-007: the headcount, so nobody has to count the list by hand (SUC-03). *@
+    <p class="mb-2">
+        <span class="badge text-bg-success">@Model.Headcount.In in</span>
+        <span class="badge text-bg-warning">@Model.Headcount.Unsure yet to answer</span>
+        <span class="badge text-bg-danger">@Model.Headcount.Out out</span>
+    </p>
+
     <ul class="list-group">
         @foreach (var participant in Model.Trip.Participants.OrderBy(p => p.JoinedAt))
         {
-            <li class="list-group-item">
-                @participant.DisplayName
-                @if (Model.Trip.IsStarter(participant.Id))
-                {
-                    <span class="badge text-bg-secondary">started the trip</span>
-                }
-                @if (participant.Id == Model.Me.Id)
-                {
-                    <span class="badge text-bg-light">you</span>
-                }
+            var badge = Badge(participant.AttendanceStatus);
+            <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                <span>
+                    @participant.DisplayName
+                    @if (Model.Trip.IsStarter(participant.Id))
+                    {
+                        <span class="badge text-bg-secondary">started the trip</span>
+                    }
+                    @if (participant.Id == Model.Me.Id)
+                    {
+                        <span class="badge text-bg-light">you</span>
+                    }
+                </span>
+                @* SC-005: a status is shown for everyone, but offered as a control to nobody but its owner. *@
+                <span class="badge @badge.Css">@badge.Symbol @badge.Label</span>
             </li>
         }
     </ul>
